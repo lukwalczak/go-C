@@ -45,26 +45,33 @@ void placeStone(gameBoard **gameBoard, game *game, int x, int y, int boardSize);
 
 int calculateStoneLiberties(gameBoard **gameBoard, game *game, int x, int y, int boardSize);
 
-int calculateDirectionalLiberty(gameBoard **gameBoard, int x, int y, int xOffset, int yOffset, char oppositeStone,
+int calculateDirectionalLiberty(gameBoard **gameBoard, int x, int y, int xOffset, int yOffset, char playerStone,
+                                char oppositeStone,
                                 int boardSize);
 
 void recalculateEveryStoneLiberties(gameBoard **gameBoard, game *game, int boardSize);
 
-void removeStone(gameBoard **gameBoard, game *game, int x, int y);
+void captureStone(gameBoard **gameBoard, game *game, int x, int y);
 
 int chooseGameBoardSize();
 
 int selectCustomBoardSize();
 
+int gameInstance();
 
 int main() {
+    int k = 0;
+    do {
+        k = gameInstance();
+    } while (k == 0);
+}
+
+int gameInstance() {
     int zn = 0, x = BOARDSTARTX, y = BOARDSTARTY, attr = 7, back = 0, zero = 0, consoleWidth = 120, consoleHeight = 30, boardSize = 13;
     char txt[32];
     gameBoard **mainGameBoard;
-    int ad;
     player player1 = {0, 'X'}, player2 = {0, 'O'};
     game mainGame = {0, player1, player2};
-
     initConsole();
     boardSize = chooseGameBoardSize();
     mainGameBoard = createNewGameBoard(boardSize);
@@ -94,16 +101,20 @@ int main() {
                 if (x - 1 >= BOARDSTARTX)x--;
             } else if (zn == 0x4d) {
                 if (x <= BOARDSTARTX + boardSize)x++;
-            };
+            }
         } else if (zn == ' ') attr = (attr + 1) % 16;
         else if (zn == 0x0d) back = (back + 1) % 16;    // enter key is 0x0d or '\r'
         else if (zn == 0x69) {
             placeStone(mainGameBoard, &mainGame, x, y, boardSize);
             recalculateEveryStoneLiberties(mainGameBoard, &mainGame, boardSize);
+        } else if (zn == 0x6e) {
+            return 0;
+        } else if (zn == 0x51) {
+            freeGameBoardMemory(mainGameBoard, boardSize);
+            return 1;
         }
     } while (zn != 'q');
     _setcursortype(_NORMALCURSOR);
-    return 0;
 }
 
 void initConsole() {
@@ -279,13 +290,13 @@ void recalculateEveryStoneLiberties(gameBoard **gameBoard, game *game, int board
     for (int i = 0; i < boardSize; i++) {
         for (int j = 0; j < boardSize; j++) {
             if (calculateStoneLiberties(gameBoard, game, i, j, boardSize) == 0) {
-                removeStone(gameBoard, game, i, j);
+                captureStone(gameBoard, game, i, j);
             }
         }
     }
 }
 
-void removeStone(gameBoard **gameBoard, game *game, int x, int y) {
+void captureStone(gameBoard **gameBoard, game *game, int x, int y) {
     char c = gameBoard[x][y].value, z;
     if (game->turn % 2 == 0)
         z = game->player2.playerStone;
@@ -302,19 +313,23 @@ void removeStone(gameBoard **gameBoard, game *game, int x, int y) {
 
 int calculateStoneLiberties(gameBoard **gameBoard, game *game, int x, int y, int boardSize) {
     int liberties = 0;
-    char oppositeStone;
-    if (game->turn % 2 == 0)
+    char oppositeStone, playerStone;
+    if (game->turn % 2 == 0) {
         oppositeStone = game->player2.playerStone;
-    else
+        playerStone = game->player1.playerStone;
+    } else {
         oppositeStone = game->player1.playerStone;
-    liberties += calculateDirectionalLiberty(gameBoard, x, y, 1, 0, oppositeStone, boardSize);
-    liberties += calculateDirectionalLiberty(gameBoard, x, y, -1, 0, oppositeStone, boardSize);
-    liberties += calculateDirectionalLiberty(gameBoard, x, y, 0, 1, oppositeStone, boardSize);
-    liberties += calculateDirectionalLiberty(gameBoard, x, y, 0, -1, oppositeStone, boardSize);
+        playerStone = game->player2.playerStone;
+    }
+    liberties += calculateDirectionalLiberty(gameBoard, x, y, 1, 0, playerStone, oppositeStone, boardSize);
+    liberties += calculateDirectionalLiberty(gameBoard, x, y, -1, 0, playerStone, oppositeStone, boardSize);
+    liberties += calculateDirectionalLiberty(gameBoard, x, y, 0, 1, playerStone, oppositeStone, boardSize);
+    liberties += calculateDirectionalLiberty(gameBoard, x, y, 0, -1, playerStone, oppositeStone, boardSize);
     return liberties;
 }
 
-int calculateDirectionalLiberty(gameBoard **gameBoard, int x, int y, int xOffset, int yOffset, char oppositeStone,
+int calculateDirectionalLiberty(gameBoard **gameBoard, int x, int y, int xOffset, int yOffset, char playerStone,
+                                char oppositeStone,
                                 int boardSize) {
     switch (xOffset) {
         case 1: {
