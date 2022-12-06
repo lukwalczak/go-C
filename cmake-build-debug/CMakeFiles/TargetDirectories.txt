@@ -1,0 +1,3 @@
+C:/Users/lukil/Desktop/Goc/cmake-build-debug/CMakeFiles/Goc.dir
+C:/Users/lukil/Desktop/Goc/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/lukil/Desktop/Goc/cmake-build-debug/CMakeFiles/rebuild_cache.dir
